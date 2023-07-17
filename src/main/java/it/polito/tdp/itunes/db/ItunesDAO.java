@@ -17,9 +17,105 @@ import it.polito.tdp.itunes.model.Track;
 
 public class ItunesDAO {
 	
-	public List<Album> getAllAlbums(){
+	public List<Album> getAlbumDurata(Map<Integer, Album> idMap, int d){
+		final String sql = "SELECT  a.AlbumId, SUM(t.Milliseconds) AS durata "
+				+ "FROM album a, track t "
+				+ "WHERE a.AlbumId = t.AlbumId "
+				+ "GROUP BY a.AlbumId "
+				+ "HAVING durata >  ? ";
+		List<Album> result = new ArrayList<>();
+		
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, d);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				Album a = idMap.get(res.getInt("AlbumId"));
+				result.add(a);
+				
+			}
+			conn.close();
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		
+	}
+	
+	
+	public int getIntDurata(Album a ){
+		final String sql = "SELECT  a.AlbumId, SUM(t.Milliseconds) AS durata "
+				+ "FROM album a, track t "
+				+ "WHERE a.AlbumId = t.AlbumId AND a.AlbumId = ?  "
+				+ "GROUP BY a.AlbumId "
+				+ "";
+		int result = 0;
+		
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, a.getAlbumId());
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result += res.getInt("durata");
+				
+				
+				
+			}
+			conn.close();
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		
+	}
+	
+	public int isStessoALbum(Album a1, Album a2 ) {
+		String sql = "SELECT tab1.PlaylistId "
+				+ "FROM (SELECT DISTINCT  p.PlaylistId "
+				+ "		FROM track t, playlisttrack p "
+				+ "		WHERE p.TrackId = t.TrackId AND t.AlbumId = ? ) tab1, "
+				+ "			(SELECT DISTINCT  p2.PlaylistId "
+				+ "			FROM track t2, playlisttrack p2 "
+				+ "			WHERE p2.TrackId = t2.TrackId AND t2.AlbumId = ? ) tab2 "
+				+ "WHERE tab1.PlaylistId = tab2.PlaylistId";
+		
+		List<Integer> result = new ArrayList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, a1.getAlbumId());
+			st.setInt(2, a2.getAlbumId());
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(res.getInt("PlaylistId"));
+				
+			}
+			conn.close();
+			return result.size();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		
+		
+		
+	}
+	
+	
+	
+	public void loadAllAlbum(Map<Integer, Album> idMap){
 		final String sql = "SELECT * FROM Album";
-		List<Album> result = new LinkedList<>();
+		
 		
 		try {
 			Connection conn = DBConnect.getConnection();
@@ -27,14 +123,16 @@ public class ItunesDAO {
 			ResultSet res = st.executeQuery();
 
 			while (res.next()) {
-				result.add(new Album(res.getInt("AlbumId"), res.getString("Title"), 0.0));
+				Album a = new Album(res.getInt("AlbumId"), res.getString("Title"), 0.0);
+				idMap.put(a.getAlbumId(), a);
+				
 			}
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new RuntimeException("SQL Error");
 		}
-		return result;
+		
 	}
 	
 	public List<Artist> getAllArtists(){

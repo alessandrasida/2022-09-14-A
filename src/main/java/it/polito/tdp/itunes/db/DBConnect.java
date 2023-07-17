@@ -8,7 +8,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 public class DBConnect {
 
-	private static String jdbcURL = "jdbc:mysql://localhost/iTunes";
+	private static String jdbcURL = "jdbc:mariadb://127.0.0.1/iTunes";
 	private static HikariDataSource ds;
 
 	public static Connection getConnection() {
